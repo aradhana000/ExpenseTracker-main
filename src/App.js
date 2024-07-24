@@ -5,10 +5,12 @@ import Login from './Component/Login';
 import Welcome from './Component/Welcome';
 import CompleteProfile from './Component/CompleteProfile';
 import VerifyEmail from './Component/VerifyEmail';
+import Header from './Component/Header';
 
 const App = () => {
   return (
     <Router>
+      <Header />
       <Routes>
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
