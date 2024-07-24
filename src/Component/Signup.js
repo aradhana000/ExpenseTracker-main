@@ -2,14 +2,14 @@ import React, {useState} from "react";
 import { auth } from './Firebase';
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { Form, Button, Container, Row, Col, Alert } from 'react-bootstrap';
-import { Link, useHistory } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Signup = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-  const history = useHistory();
+  const navigate = useNavigate();
 
   // handle form submission
 
@@ -29,7 +29,7 @@ const Signup = () => {
     try {
       await createUserWithEmailAndPassword(auth, email, password);
       console.log("User has successfully signed up");
-      history.push('/login');
+      navigate('/login');
 
     } catch (error){
       setError(error.message);
