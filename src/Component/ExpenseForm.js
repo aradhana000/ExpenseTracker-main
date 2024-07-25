@@ -1,29 +1,68 @@
 import React, { useState, useEffect } from 'react';
 import { auth } from './Firebase';
-import { Form, Button, Container, Row, Col, Table } from 'react-bootstrap';
+import { Form, Button, Container, Row, Col, Table, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const ExpenseForm = () => {
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('Food');
   const [expenses, setExpenses] = useState([]);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true); // Loading state
   const navigate = useNavigate();
 
   useEffect(() => {
-    const user = auth.currentUser;
-    if (!user) {
-      navigate('/login'); // Redirect to login if not authenticated
-    }
+    const fetchExpenses = async () => {
+      const user = auth.currentUser;
+      if (!user) {
+        navigate('/login'); // Redirect to login if not authenticated
+        return;
+      }
+
+      try {
+        const token = await user.getIdToken();
+        const response = await axios.get(
+          `https://expense-tracker-cd557-default-rtdb.firebaseio.com/expenses.json?auth=${token}`
+        );
+
+        if (response.data) {
+          const userExpenses = Object.values(response.data).filter(exp => exp.userId === user.uid);
+          setExpenses(userExpenses);
+        }
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchExpenses();
   }, [navigate]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const newExpense = { amount, description, category };
-    setExpenses([...expenses, newExpense]);
-    setAmount('');
-    setDescription('');
-    setCategory('Food');
+    const user = auth.currentUser;
+    if (!user) {
+      setError('Please log in to add expenses.');
+      return;
+    }
+
+    try {
+      const newExpense = { amount, description, category, userId: user.uid };
+      await axios.post(
+        `https://expense-tracker-cd557-default-rtdb.firebaseio.com/expenses.json?auth=${await user.getIdToken()}`,
+        newExpense
+      );
+
+      setExpenses([...expenses, newExpense]);
+      setAmount('');
+      setDescription('');
+      setCategory('Food');
+    } catch (error) {
+      setError(error.message);
+    }
   };
 
   return (
@@ -31,6 +70,8 @@ const ExpenseForm = () => {
       <Row className="justify-content-md-center">
         <Col md={6}>
           <h2 className="text-center">Add Daily Expense</h2>
+          {loading && <p>Loading...</p>} {/* Show loading indicator */}
+          {error && <Alert variant="danger">{error}</Alert>}
           <Form onSubmit={handleSubmit}>
             <Form.Group controlId="formAmount">
               <Form.Label>Amount</Form.Label>
@@ -104,6 +145,4 @@ const ExpenseForm = () => {
 };
 
 export default ExpenseForm;
-
-
 

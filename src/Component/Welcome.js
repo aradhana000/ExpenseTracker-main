@@ -1,6 +1,7 @@
 import React from 'react';
 import { Container, Row, Col, Button } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
+import ExpenseForm from './ExpenseForm';
 
 const Welcome = () => {
   return (
@@ -12,6 +13,7 @@ const Welcome = () => {
           <Link to="/complete-profile">
             <Button variant="primary">Complete Profile</Button>
           </Link>
+          <ExpenseForm/>
         </Col>
       </Row>
     </Container>

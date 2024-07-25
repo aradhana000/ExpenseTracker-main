@@ -7,7 +7,7 @@ import CompleteProfile from './Component/CompleteProfile';
 import VerifyEmail from './Component/VerifyEmail';
 import ForgotPassword from './Component/ForgotPassword';
 import Header from './Component/Header';
-import ExpenseForm from './Component/ExpenseForm';
+//import ExpenseForm from './Component/ExpenseForm';
 
 const App = () => {
   return (
@@ -20,7 +20,7 @@ const App = () => {
         <Route path="/welcome" element={<Welcome />} />
         <Route path="/complete-profile" element={<CompleteProfile />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path="/expenses" element={<ExpenseForm />} />
+      
         <Route path="/" element={<Signup />} />
       </Routes>
     </Router>
