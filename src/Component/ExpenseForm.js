@@ -10,7 +10,8 @@ const ExpenseForm = () => {
   const [category, setCategory] = useState('Food');
   const [expenses, setExpenses] = useState([]);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true); // Loading state
+  const [loading, setLoading] = useState(true);
+  const [editingExpense, setEditingExpense] = useState(null); // State for editing
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -28,7 +29,9 @@ const ExpenseForm = () => {
         );
 
         if (response.data) {
-          const userExpenses = Object.values(response.data).filter(exp => exp.userId === user.uid);
+          const userExpenses = Object.entries(response.data)
+            .filter(([_, exp]) => exp.userId === user.uid)
+            .map(([id, exp]) => ({ id, ...exp }));
           setExpenses(userExpenses);
         }
       } catch (error) {
@@ -50,13 +53,26 @@ const ExpenseForm = () => {
     }
 
     try {
-      const newExpense = { amount, description, category, userId: user.uid };
-      await axios.post(
-        `https://expense-tracker-cd557-default-rtdb.firebaseio.com/expenses.json?auth=${await user.getIdToken()}`,
-        newExpense
-      );
+      const token = await user.getIdToken();
+      if (editingExpense) {
+        // Update expense
+        const updatedExpense = { amount, description, category, userId: user.uid };
+        await axios.put(
+          `https://expense-tracker-cd557-default-rtdb.firebaseio.com/expenses/${editingExpense.id}.json?auth=${token}`,
+          updatedExpense
+        );
+        setExpenses(expenses.map(exp => (exp.id === editingExpense.id ? { ...exp, ...updatedExpense } : exp)));
+        setEditingExpense(null); // Reset editing state
+      } else {
+        // Add new expense
+        const newExpense = { amount, description, category, userId: user.uid };
+        const response = await axios.post(
+          `https://expense-tracker-cd557-default-rtdb.firebaseio.com/expenses.json?auth=${token}`,
+          newExpense
+        );
+        setExpenses([...expenses, { id: response.data.name, ...newExpense }]);
+      }
 
-      setExpenses([...expenses, newExpense]);
       setAmount('');
       setDescription('');
       setCategory('Food');
@@ -65,12 +81,38 @@ const ExpenseForm = () => {
     }
   };
 
+  const handleDelete = async (id) => {
+    const user = auth.currentUser;
+    if (!user) {
+      setError('Please log in to delete expenses.');
+      return;
+    }
+
+    try {
+      const token = await user.getIdToken();
+      await axios.delete(
+        `https://expense-tracker-cd557-default-rtdb.firebaseio.com/expenses/${id}.json?auth=${token}`
+      );
+      setExpenses(expenses.filter(exp => exp.id !== id));
+      console.log('Expense successfully deleted');
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
+  const handleEdit = (expense) => {
+    setEditingExpense(expense);
+    setAmount(expense.amount);
+    setDescription(expense.description);
+    setCategory(expense.category);
+  };
+
   return (
     <Container>
       <Row className="justify-content-md-center">
         <Col md={6}>
           <h2 className="text-center">Add Daily Expense</h2>
-          {loading && <p>Loading...</p>} {/* Show loading indicator */}
+          {loading && <p>Loading...</p>}
           {error && <Alert variant="danger">{error}</Alert>}
           <Form onSubmit={handleSubmit}>
             <Form.Group controlId="formAmount">
@@ -111,7 +153,7 @@ const ExpenseForm = () => {
             </Form.Group>
 
             <Button variant="primary" type="submit" className="w-100 mt-3">
-              Add Expense
+              {editingExpense ? 'Update Expense' : 'Add Expense'}
             </Button>
           </Form>
 
@@ -123,6 +165,7 @@ const ExpenseForm = () => {
                   <th>Amount</th>
                   <th>Description</th>
                   <th>Category</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -131,6 +174,10 @@ const ExpenseForm = () => {
                     <td>{expense.amount}</td>
                     <td>{expense.description}</td>
                     <td>{expense.category}</td>
+                    <td>
+                      <Button variant="warning" onClick={() => handleEdit(expense)} className="mr-2">Edit</Button>
+                      <Button variant="danger" onClick={() => handleDelete(expense.id)}>Delete</Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -145,4 +192,5 @@ const ExpenseForm = () => {
 };
 
 export default ExpenseForm;
+
 
