@@ -1,15 +1,15 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useAuth } from './AuthProvider'; // Adjust import based on your setup
 import { Button, Navbar, Container } from 'react-bootstrap';
-import { auth } from './Firebase';
+import { useNavigate } from 'react-router-dom';
 
 const Header = () => {
+  const { logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
-      await auth.signOut();
-      localStorage.removeItem('userToken');
+      await logout();
       navigate('/login');
     } catch (error) {
       console.error('Error logging out: ', error);
@@ -32,3 +32,4 @@ const Header = () => {
 };
 
 export default Header;
+
